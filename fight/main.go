@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -107,47 +106,30 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		if v.Name == pf.PokemonB.Types[0].Type.Name {
 			damagedTypeA += 2
 		}
-
-		fmt.Print("\t" + v.Name + ": ")
-		fmt.Println(damagedTypeA)
 	}
-
-	fmt.Print("Total damage taken: ")
-	fmt.Println(damagedTypeA)
-	fmt.Println("------------")
-
-	fmt.Println("Score B: ")
 
 	for _, v := range typeB.DamageRelations.DoubleDamageFrom {
 		if v.Name == pf.PokemonA.Types[0].Type.Name {
 			damagedTypeB += 2
 		}
-		fmt.Print("\t" + v.Name + ": ")
-		fmt.Println(damagedTypeB)
 	}
 
-	fmt.Print("Total damage taken: ")
-	fmt.Println(damagedTypeB)
+	var message string
 
 	if damagedTypeA < damagedTypeB {
-		fmt.Println("A won")
+		message = pf.PokemonA.Name + " won!"
 	} else if damagedTypeB < damagedTypeA {
-		fmt.Println("B won")
+		message = pf.PokemonB.Name + " won!"
 	} else {
-		fmt.Println("Draw!")
+		message = "It's a draw =/"
 	}
 
 	response := Response{}
-	response.Message = "Hello world!"
-	responseJSON, err := json.Marshal(response)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.Message = message
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(responseJSON)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(response)
 
 }
