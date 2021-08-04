@@ -5,19 +5,18 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"time"
 
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"github.com/gorilla/mux"
+	"github.com/mtslzr/pokeapi-go"
+	"github.com/mtslzr/pokeapi-go/structs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/yfuruyama/crzerolog"
 	"go.opencensus.io/plugin/ochttp"
 )
-
-type Response struct {
-	Message string `json:"message"`
-}
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -42,15 +41,35 @@ func main() {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	response := Response{}
-	response.Message = "Hello World!"
-	responseJSON, err := json.Marshal(response)
 
+	ps, err := pokeapi.Resource("pokemon", 1, 500)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Can’t parse JSON")
+		log.Ctx(r.Context()).Error().Err(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	randomSelection := rand.Perm(len(ps.Results))
+	re := regexp.MustCompile("/pokemon/([0-9]+)*")
+
+	var result []structs.Pokemon
+	for _, v := range randomSelection[:2] {
+
+		match := re.FindStringSubmatch(ps.Results[v].URL)
+		p, err := pokeapi.Pokemon(match[1])
+
+		if err != nil {
+			log.Ctx(r.Context()).Error().Err(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		result = append(result, p)
+
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(responseJSON)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(result)
 }
