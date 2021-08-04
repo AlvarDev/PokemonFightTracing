@@ -71,6 +71,9 @@ type Response struct {
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 
+	logger := log.Ctx(r.Context())
+	logger.Info().Msg("Serving fight pokemons")
+
 	var pf PokemonsFight
 	err := json.NewDecoder(r.Body).Decode(&pf)
 
@@ -123,6 +126,15 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		message = "It's a draw =/"
 	}
+
+	logger.Info().
+		Str("namePokemonA", pf.PokemonA.Name).
+		Str("namePokemonB", pf.PokemonB.Name).
+		Str("typePokemonA", pf.PokemonA.Types[0].Type.Name).
+		Str("typePokemonB", pf.PokemonB.Types[0].Type.Name).
+		Int("damagedPokemonA", damagedTypeA).
+		Int("damagedPokemonB", damagedTypeB).
+		Msg(message)
 
 	response := Response{}
 	response.Message = message

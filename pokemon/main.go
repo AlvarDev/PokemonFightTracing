@@ -22,7 +22,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	mux := mux.NewRouter()
-	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/", rootHandler).Methods("GET")
 
 	rootLogger := zerolog.New(os.Stdout)
 	middleware := crzerolog.InjectLogger(&rootLogger)
@@ -41,6 +41,8 @@ func main() {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.Ctx(r.Context())
+	logger.Info().Msg("Serving random pokemons")
 
 	ps, err := pokeapi.Resource("pokemon", 1, 500)
 	if err != nil {
@@ -63,6 +65,12 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		logger.Info().
+			Str("pokemonId", match[1]).
+			Str("name", p.Name).
+			Str("type", p.Types[0].Type.Name).
+			Msg("Requesting pokemon")
 
 		result = append(result, p)
 
