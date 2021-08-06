@@ -2,49 +2,51 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 
+	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"github.com/gorilla/mux"
 	"github.com/mtslzr/pokeapi-go"
 	"github.com/rs/cors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/yfuruyama/crzerolog"
+	"go.opencensus.io/plugin/ochttp"
 )
 
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods("POST", http.MethodOptions)
-	//r.Use(mux.CORSMethodMiddleware(r))
 	handler := cors.Default().Handler(r)
-	//rootLogger := zerolog.New(os.Stdout)
-	//middleware := crzerolog.InjectLogger(&rootLogger)
-	// handler := middleware(r)
-	//r.Use(middleware(r))
 
-	//httpHandler := &ochttp.Handler{
-	//	Propagation: &propagation.HTTPFormat{},
-	//	Handler:     r,
-	//}
+	rootLogger := zerolog.New(os.Stdout)
+	middleware := crzerolog.InjectLogger(&rootLogger)
+	handler = middleware(handler)
+
+	httpHandler := &ochttp.Handler{
+		Propagation: &propagation.HTTPFormat{},
+		Handler:     handler,
+	}
 
 	log.Info().Msg("Serving pokemon fight")
 
-	if err := http.ListenAndServe(":8080", handler); err != nil {
+	if err := http.ListenAndServe(":8080", httpHandler); err != nil {
 		log.Fatal().Err(err).Msg("Can’t start service")
 	}
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if r.Method == http.MethodOptions {
-		return
-	}
-
 	logger := log.Ctx(r.Context())
 	logger.Info().Msg("Serving fight pokemons")
 
 	var pf PokemonsFight
 	err := json.NewDecoder(r.Body).Decode(&pf)
+
+	fmt.Println(err)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
