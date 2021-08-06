@@ -48,21 +48,17 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func pokemonsHandler(w http.ResponseWriter, r *http.Request) {
-	logger := log.Ctx(r.Context())
-	logger.Info().Msg("Request on get-pokemons")
 
 	// Could be an ENV
 	targetURL := "https://pokemon-tbcpnuln2q-rj.a.run.app"
 
-	ctx := context.Background()
-	client, err := idtoken.NewClient(ctx, targetURL)
-	if err != nil {
-		log.Ctx(r.Context()).Error().Err(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	client, _ := idtoken.NewClient(context.Background(), targetURL)
+	log.Ctx(r.Context()).Info().Msg("Request on fight-pokemon")
 
-	resp, err := client.Get(targetURL)
+	req, _ := http.NewRequest("GET", targetURL, nil)
+	req = req.WithContext(r.Context())
+
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Ctx(r.Context()).Error().Err(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -81,21 +77,17 @@ func pokemonsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func fightHandler(w http.ResponseWriter, r *http.Request) {
-	logger := log.Ctx(r.Context())
-	logger.Info().Msg("Serving random pokemons")
 
 	// Could be an ENV
 	targetURL := "https://fight-tbcpnuln2q-rj.a.run.app"
 
-	ctx := context.Background()
-	client, err := idtoken.NewClient(ctx, targetURL)
-	if err != nil {
-		log.Ctx(r.Context()).Error().Err(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	client, _ := idtoken.NewClient(context.Background(), targetURL)
+	log.Ctx(r.Context()).Info().Msg("Request on fight-pokemon")
 
-	resp, err := client.Post(targetURL, "application/json", r.Body)
+	req, _ := http.NewRequest("POST", targetURL, r.Body)
+	req = req.WithContext(r.Context())
+
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Ctx(r.Context()).Error().Err(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

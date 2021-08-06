@@ -31,8 +31,6 @@ func main() {
 		Handler:     handler,
 	}
 
-	log.Info().Msg("Serving pokemon fight")
-
 	if err := http.ListenAndServe(":8080", httpHandler); err != nil {
 		log.Fatal().Err(err).Msg("Can’t start service")
 	}
@@ -98,7 +96,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		message = "It's a draw =/"
 	}
 
-	logger.Info().
+	log.Ctx(r.Context()).Info().
 		Str("namePokemonA", pf.PokemonA.Name).
 		Str("namePokemonB", pf.PokemonB.Name).
 		Str("typePokemonA", pf.PokemonA.Types[0].Type.Name).

@@ -66,7 +66,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logger.Info().
+		log.Ctx(r.Context()).Info().
 			Str("pokemonId", match[1]).
 			Str("name", p.Name).
 			Str("type", p.Types[0].Type.Name).
