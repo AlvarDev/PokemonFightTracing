@@ -22,7 +22,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	mux := mux.NewRouter()
-	mux.HandleFunc("/", rootHandler).Methods("GET")
+	mux.HandleFunc("/", rootHandler).Methods("GET", "OPTIONS")
 
 	rootLogger := zerolog.New(os.Stdout)
 	middleware := crzerolog.InjectLogger(&rootLogger)

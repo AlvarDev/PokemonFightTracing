@@ -3,73 +3,42 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"regexp"
 
-	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"github.com/gorilla/mux"
 	"github.com/mtslzr/pokeapi-go"
-	"github.com/rs/zerolog"
+	"github.com/rs/cors"
 	"github.com/rs/zerolog/log"
-	"github.com/yfuruyama/crzerolog"
-	"go.opencensus.io/plugin/ochttp"
 )
 
 func main() {
-	mux := mux.NewRouter()
-	mux.HandleFunc("/", rootHandler).Methods("POST")
+	r := mux.NewRouter()
+	r.HandleFunc("/", rootHandler).Methods("POST", http.MethodOptions)
+	//r.Use(mux.CORSMethodMiddleware(r))
+	handler := cors.Default().Handler(r)
+	//rootLogger := zerolog.New(os.Stdout)
+	//middleware := crzerolog.InjectLogger(&rootLogger)
+	// handler := middleware(r)
+	//r.Use(middleware(r))
 
-	rootLogger := zerolog.New(os.Stdout)
-	middleware := crzerolog.InjectLogger(&rootLogger)
-	handler := middleware(mux)
-
-	httpHandler := &ochttp.Handler{
-		Propagation: &propagation.HTTPFormat{},
-		Handler:     handler,
-	}
+	//httpHandler := &ochttp.Handler{
+	//	Propagation: &propagation.HTTPFormat{},
+	//	Handler:     r,
+	//}
 
 	log.Info().Msg("Serving pokemon fight")
 
-	if err := http.ListenAndServe(":8080", httpHandler); err != nil {
+	if err := http.ListenAndServe(":8080", handler); err != nil {
 		log.Fatal().Err(err).Msg("Can’t start service")
 	}
 }
 
-// Request struct handler
-type PokemonsFight struct {
-	PokemonA struct {
-		ID    int    `json:"id"`
-		Name  string `json:"name"`
-		Photo string `json:"photo"`
-		Types []struct {
-			Slot int `json:"slot"`
-			Type struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"type"`
-		} `json:"types"`
-	} `json:"pokemonA"`
-
-	PokemonB struct {
-		ID    int    `json:"id"`
-		Name  string `json:"name"`
-		Photo string `json:"photo"`
-		Types []struct {
-			Slot int `json:"slot"`
-			Type struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"type"`
-		} `json:"types"`
-	} `json:"pokemonB"`
-}
-
-// Response definition for response API
-type Response struct {
-	Message string `json:"message"`
-}
-
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if r.Method == http.MethodOptions {
+		return
+	}
 
 	logger := log.Ctx(r.Context())
 	logger.Info().Msg("Serving fight pokemons")
@@ -144,4 +113,38 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	encoder := json.NewEncoder(w)
 	encoder.Encode(response)
 
+}
+
+// Request struct handler
+type PokemonsFight struct {
+	PokemonA struct {
+		ID    int    `json:"id"`
+		Name  string `json:"name"`
+		Photo string `json:"photo"`
+		Types []struct {
+			Slot int `json:"slot"`
+			Type struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"type"`
+		} `json:"types"`
+	} `json:"pokemonA"`
+
+	PokemonB struct {
+		ID    int    `json:"id"`
+		Name  string `json:"name"`
+		Photo string `json:"photo"`
+		Types []struct {
+			Slot int `json:"slot"`
+			Type struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"type"`
+		} `json:"types"`
+	} `json:"pokemonB"`
+}
+
+// Response definition for response API
+type Response struct {
+	Message string `json:"message"`
 }
